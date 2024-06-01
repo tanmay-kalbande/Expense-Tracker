@@ -20,7 +20,7 @@ function addExpense() {
 
         const expenses = JSON.parse(localStorage.getItem('expenses')) || [];
         const newExpense = { id: Date.now(), name, amount, date, category };
-        expenses.push(newExpense);
+        expenses.unshift(newExpense); // Add new expense at the beginning
         localStorage.setItem('expenses', JSON.stringify(expenses));
 
         // Ensure we're showing the month of the newly added expense
@@ -36,6 +36,7 @@ function addExpense() {
         addButton.textContent = 'Add Expense';
     }
 }
+
 
 function clearForm() {
     document.getElementById('name').value = '';
@@ -57,6 +58,9 @@ function fetchExpenses() {
     const expenseList = document.getElementById('expense-list');
     expenseList.innerHTML = '';
 
+    // Sort expenses by date in descending order
+    filteredExpenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+
     filteredExpenses.forEach(expense => {
         const li = document.createElement('li');
 
@@ -74,6 +78,7 @@ function fetchExpenses() {
         expenseList.appendChild(li);
     });
 }
+
 
 function getCurrentMonth() {
     const now = new Date();
@@ -112,11 +117,26 @@ function getCategoryIcon(category) {
             return 'fa-file-invoice-dollar';
         case 'Entertainment':
             return 'fa-film';
+        case 'Housing':
+            return 'fa-home';
+        case 'Groceries':
+            return 'fa-shopping-cart';
+        case 'Health':
+            return 'fa-heartbeat';
+        case 'Education':
+            return 'fa-graduation-cap';
+        case 'Personal Care':
+            return 'fa-user';
+        case 'Savings':
+            return 'fa-piggy-bank';
+        case 'Travel':
+            return 'fa-plane';
         case 'Other':
         default:
             return 'fa-question-circle';
     }
 }
+
 
 function formatDate(dateStr) {
     const date = new Date(dateStr);
@@ -166,21 +186,34 @@ function fetchSummary() {
     // Clear the canvas to prevent ghosting
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-    // Create a new chart
+    // Create a new chart with updated colors
     expenseChart = new Chart(ctx, {
         type: 'pie',
         data: {
             labels: Object.keys(categoryBreakdown),
             datasets: [{
                 data: Object.values(categoryBreakdown),
-                backgroundColor: ['#2F4F4F', '#333333', '#666666', '#1C3030', '#F5F5F5']
+                backgroundColor: [
+                  '#2F4F4F', // Dark Slate Gray - Primary
+                  '#4F6363', // Slate Gray - Primary Shade
+                  '#333333', // Dark Gray - Secondary
+                  '#666666', // Light Gray - Text Light Color
+                  '#1C3030', // Dark Cyan - Button Hover
+                  '#3E5050', // Grayish Cyan - Button Hover Shade
+                  '#F5F5F5', // White Smoke - Background
+                  '#E6E6E6', // Light Gray - Background Shade
+                  '#FFD700', // Gold - Highlight
+                  '#E6C300', // Dark Gold - Highlight Shade
+                  '#BFBFBF', // Silver - Neutral Shade
+                  '#999999', // Dim Gray - Neutral Shade
+                ]
             }]
         },
         options: {
             plugins: {
                 legend: {
                     labels: {
-                        color: '#333333'
+                        color: '#333333' // Match legend text color with page palette
                     }
                 }
             }
@@ -188,7 +221,55 @@ function fetchSummary() {
     });
 }
 
+
 function updateExpensesAndSummary() {
     fetchExpenses();
     fetchSummary();
+}
+
+
+function exportData() {
+    const expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+    const csvContent = "data:text/csv;charset=utf-8,"
+        + "ID,Name,Amount,Date,Category\n"
+        + expenses.map(expense => `${expense.id},${expense.name},${expense.amount},${expense.date},${expense.category}`).join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "expenses.csv");
+    document.body.appendChild(link); // Required for FF
+    link.click();
+    document.body.removeChild(link);
+}
+
+
+function importData() {
+    const fileInput = document.getElementById('file-input');
+    const file = fileInput.files[0];
+
+    if (!file) {
+        alert('Please select a file to import');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const csvContent = event.target.result;
+        const lines = csvContent.split("\n");
+        const expenses = [];
+
+        for (let i = 1; i < lines.length; i++) { // Skip header line
+            const line = lines[i].trim();
+            if (line) {
+                const [id, name, amount, date, category] = line.split(",");
+                expenses.push({ id: parseInt(id), name, amount: parseFloat(amount), date, category });
+            }
+        }
+
+        localStorage.setItem('expenses', JSON.stringify(expenses));
+        updateExpensesAndSummary();
+    };
+
+    reader.readAsText(file);
 }
