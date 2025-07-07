@@ -67,14 +67,6 @@ GOOGLE_API_KEY=your_google_api_key_here
 - **Category Colors** - Each category has unique color
 - **Hover Effects** - Subtle interactive feedback
 
-## 📱 Screenshots
-
-The app features:
-- Clean dashboard with expense statistics
-- Beautiful expense addition modal
-- Real-time chart updates
-- Budget management interface
-- AI-powered insights panel
 
 ## 🔧 Features Working
 
